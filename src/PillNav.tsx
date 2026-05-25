@@ -4,7 +4,6 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 gsap.registerPlugin(ScrollToPlugin)
 
 const NAV = ['IMAGE', 'VIDEO', 'ABOUT', 'CONTACT']
-const API = 'http://localhost:8000'
 
 export default function PillNav() {
   const logoRef = useRef<HTMLDivElement>(null)
