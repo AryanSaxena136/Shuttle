@@ -16,23 +16,6 @@ export default function PillNav() {
   const line2Ref = useRef<HTMLSpanElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const [modal, setModal] = useState<'IMAGE' | 'VIDEO' | null>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [result, setResult] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  async function predict() {
-    if (!file || !modal) return
-    setLoading(true); setResult(null)
-    const form = new FormData(); form.append('file', file)
-    const res = await fetch(`${API}${modal === 'IMAGE' ? '/predict/image' : '/predict/video'}`, { method: 'POST', body: form })
-    setResult(URL.createObjectURL(await res.blob()))
-    setLoading(false)
-  }
-
-  function openModal(type: 'IMAGE' | 'VIDEO') { setModal(type); setFile(null); setResult(null) }
-  function closeModal() { setModal(null) }
-
   useEffect(() => {
     if (logoRef.current) gsap.from(logoRef.current, { scale: 0, duration: 0.6, ease: 'back.out(1.7)' })
     if (navItemsRef.current) gsap.from(navItemsRef.current, { width: 0, opacity: 0, duration: 0.6, delay: 0.2, ease: 'power2.out' })
@@ -74,37 +57,26 @@ export default function PillNav() {
   }, [menuOpen])
 
   function handleNav(item: string) {
-    if (item === 'IMAGE') { openModal('IMAGE'); return }
-    if (item === 'VIDEO') { openModal('VIDEO'); return }
-    if (item === 'ABOUT') gsap.to(window, { duration: 3, scrollTo: document.body.scrollHeight, ease: 'power3.inOut' })
-    if (item === 'CONTACT') gsap.to(window, { duration: 3, scrollTo: 0, ease: 'power3.inOut' })
+    if (item === 'IMAGE') {
+      gsap.to(window, { duration: 1.5, scrollTo: '#image-panel', ease: 'power3.inOut' })
+      return
+    }
+    if (item === 'VIDEO') {
+      gsap.to(window, { duration: 1.5, scrollTo: '#video-panel', ease: 'power3.inOut' })
+      return
+    }
+    if (item === 'ABOUT') {
+      gsap.to(window, { duration: 1.5, scrollTo: '#about-panel', ease: 'power3.inOut' })
+      return
+    }
+    if (item === 'CONTACT') {
+      gsap.to(window, { duration: 1.5, scrollTo: '#contact-panel', ease: 'power3.inOut' })
+      return
+    }
   }
 
   return (
     <>
-      {/* Modal */}
-      {modal && (
-        <div onClick={closeModal} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 24, padding: 40, width: '90%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontFamily: 'Manrope', fontWeight: 600, fontSize: 18, color: 'white' }}>{modal === 'IMAGE' ? 'Image Prediction' : 'Video Tracking'}</h2>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 22, cursor: 'pointer' }}>✕</button>
-            </div>
-            <input type="file" accept={modal === 'IMAGE' ? 'image/*' : 'video/*'}
-              onChange={e => { setFile(e.target.files?.[0] ?? null); setResult(null) }}
-              style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }} />
-            <button onClick={predict} disabled={!file || loading} style={{
-              background: loading ? 'rgba(240,240,240,0.3)' : '#f0f0f0', color: '#000',
-              border: 'none', borderRadius: 50, padding: '12px 0', fontFamily: 'Manrope',
-              fontWeight: 600, fontSize: 14, letterSpacing: '0.05em', textTransform: 'uppercase',
-              cursor: file && !loading ? 'pointer' : 'not-allowed',
-            }}>{loading ? 'Processing...' : 'Run Detection'}</button>
-            {result && modal === 'IMAGE' && <img src={result} alt="result" style={{ width: '100%', borderRadius: 12 }} />}
-            {result && modal === 'VIDEO' && <video src={result} controls style={{ width: '100%', borderRadius: 12 }} />}
-          </div>
-        </div>
-      )}
-
       {/* Navbar */}
       <div className="pill-nav-container">
         <div className="pill-nav" style={{ gap: 8 }}>

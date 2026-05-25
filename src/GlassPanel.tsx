@@ -101,17 +101,26 @@ function UploadSection({
   )
 }
 
-export default function GlassPanel() {
+export default function GlassPanel({ 
+  id, 
+  title, 
+  type,
+  showMarquee = true,
+  children
+}: { 
+  id: string, 
+  title: string, 
+  type?: 'image' | 'video',
+  showMarquee?: boolean,
+  children?: React.ReactNode
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [videoFile, setVideoFile] = useState<File | null>(null)
-  const [imageResult, setImageResult] = useState<string | null>(null)
-  const [videoResult, setVideoResult] = useState<string | null>(null)
-  const [loadingImg, setLoadingImg] = useState(false)
-  const [loadingVid, setLoadingVid] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [result, setResult] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || !wrapRef.current) return
@@ -136,67 +145,63 @@ export default function GlassPanel() {
     return () => { panel.removeEventListener('mousemove', onMove); panel.removeEventListener('mouseleave', onLeave) }
   }, [])
 
-  async function sendImage() {
-    if (!imageFile) return
-    setLoadingImg(true); setImageResult(null)
-    const form = new FormData(); form.append('file', imageFile)
-    const res = await fetch(`${API}/predict/image`, { method: 'POST', body: form })
-    setImageResult(URL.createObjectURL(await res.blob()))
-    setLoadingImg(false)
-  }
-
-  async function sendVideo() {
-    if (!videoFile) return
-    setLoadingVid(true); setVideoResult(null)
-    const form = new FormData(); form.append('file', videoFile)
-    const res = await fetch(`${API}/predict/video`, { method: 'POST', body: form })
-    setVideoResult(URL.createObjectURL(await res.blob()))
-    setLoadingVid(false)
+  async function handlePredict() {
+    if (!file || !type) return
+    setLoading(true); setResult(null)
+    const form = new FormData(); form.append('file', file)
+    const endpoint = type === 'image' ? '/predict/image' : '/predict/video'
+    const res = await fetch(`${API}${endpoint}`, { method: 'POST', body: form })
+    setResult(URL.createObjectURL(await res.blob()))
+    setLoading(false)
   }
 
   return (
-    <div ref={containerRef} style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '100vh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 20 }}>
+    <div id={id} ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 20 }}>
       <div ref={wrapRef} style={{ width: '100%', maxWidth: 1250, perspective: 1000 }}>
         <div ref={panelRef} style={{
           width: '100%', display: 'flex', flexDirection: 'column',
-          borderRadius: '24px 24px 0 0', overflow: 'hidden',
-          backgroundColor: 'rgba(0,0,0,0.16)', backdropFilter: 'blur(160px)',
-          WebkitBackdropFilter: 'blur(160px)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '32px', overflow: 'hidden',
+          backgroundColor: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
           transformStyle: 'preserve-3d', willChange: 'transform',
         }}>
 
           {/* Header */}
-          <div style={{ padding: '28px 40px 0', display: 'flex', alignItems: 'baseline', gap: 16 }}>
-            <h2 style={{ fontFamily: 'var(--font-dirtyline)', fontSize: 'clamp(2rem, 4vw, 52px)', color: 'white', margin: 0, lineHeight: 1 }}>
-              AI Powered Shuttle Tracker
+          <div style={{ padding: '40px 48px 0', display: 'flex', alignItems: 'baseline', gap: 16 }}>
+            <h2 style={{ fontFamily: 'var(--font-dirtyline)', fontSize: 'clamp(2.5rem, 5vw, 64px)', color: 'white', margin: 0, lineHeight: 1, textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>
+              {title}
             </h2>
           </div>
 
-          {/* Image Section */}
-          <UploadSection
-            id="image-section" label="Image" accept="image/*"
-            onFile={setImageFile} onPredict={sendImage}
-            loading={loadingImg} result={imageResult} type="image"
-          />
-
-          {/* Video Section */}
-          <UploadSection
-            id="video-section" label="Video" accept="video/*"
-            onFile={setVideoFile} onPredict={sendVideo}
-            loading={loadingVid} result={videoResult} type="video"
-          />
+          <div style={{ padding: '0 48px 48px' }}>
+            {type ? (
+              <UploadSection
+                id={`${type}-section`} 
+                label={type === 'image' ? 'Image' : 'Video'} 
+                accept={type === 'image' ? 'image/*' : 'video/*'}
+                onFile={setFile} 
+                onPredict={handlePredict}
+                loading={loading} 
+                result={result} 
+                type={type}
+              />
+            ) : children}
+          </div>
 
           {/* Marquee */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '1.2rem 0', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', animation: 'marquee 20s linear infinite', width: 'max-content' }}>
-              {MARQUEE.map((b, i) => (
-                <span key={i} style={{ padding: '0 2rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap', transition: 'color 0.3s', cursor: 'default' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
-                >{b}</span>
-              ))}
+          {showMarquee && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '1.5rem 0', overflow: 'hidden', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+              <div style={{ display: 'flex', animation: 'marquee 20s linear infinite', width: 'max-content' }}>
+                {MARQUEE.map((b, i) => (
+                  <span key={i} style={{ padding: '0 2.5rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', whiteSpace: 'nowrap', transition: 'all 0.3s', cursor: 'default' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.textShadow = '0 0 10px rgba(255,255,255,0.5)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)'; e.currentTarget.style.textShadow = 'none' }}
+                  >{b}</span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
