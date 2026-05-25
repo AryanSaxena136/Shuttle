@@ -3,16 +3,17 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
-const API = 'http://localhost:8000'
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const BRANDS = ['SHUTTLE', 'DETECT', 'YOLO', 'FASTAPI', 'VISION', 'TRACK']
 const MARQUEE = [...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS]
 
 function UploadSection({
-  id, label, accept, onFile, onPredict, loading, result, type
+  id, label, accept, onFile, onPredict, loading, result, type, loadError, onPreviewError
 }: {
   id: string, label: string, accept: string,
   onFile: (f: File) => void, onPredict: () => void,
-  loading: boolean, result: string | null, type: 'image' | 'video'
+  loading: boolean, result: string | null, type: 'image' | 'video',
+  loadError: boolean, onPreviewError: () => void,
 }) {
   const [dragging, setDragging] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
@@ -76,9 +77,13 @@ function UploadSection({
           alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minHeight: 160,
         }}>
           {result ? (
-            type === 'image'
-              ? <img src={result} alt="output" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
-              : <video src={result} controls style={{ width: '100%', borderRadius: 14 }} />
+            !loadError ? (
+              type === 'image'
+                ? <img src={result} alt="output" onError={onPreviewError} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
+                : <video src={result} controls onError={onPreviewError} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
+            ) : (
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Preview failed to load. Download the output to verify.</p>
+            )
           ) : (
             <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>Output {label} preview</p>
           )}
@@ -121,6 +126,7 @@ export default function GlassPanel({
   const [file, setFile] = useState<File | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || !wrapRef.current) return
@@ -147,12 +153,23 @@ export default function GlassPanel({
 
   async function handlePredict() {
     if (!file || !type) return
-    setLoading(true); setResult(null)
+    setLoading(true); setResult(null); setLoadError(false)
     const form = new FormData(); form.append('file', file)
     const endpoint = type === 'image' ? '/predict/image' : '/predict/video'
-    const res = await fetch(`${API}${endpoint}`, { method: 'POST', body: form })
-    setResult(URL.createObjectURL(await res.blob()))
-    setLoading(false)
+
+    try {
+      const res = await fetch(`${API}${endpoint}`, { method: 'POST', body: form })
+      if (!res.ok) throw new Error(`Request failed: ${res.status} ${res.statusText}`)
+      const blob = await res.blob()
+      const contentType = res.headers.get('content-type') || (type === 'video' ? 'video/mp4' : 'image/jpeg')
+      setResult(URL.createObjectURL(new Blob([blob], { type: contentType })))
+    } catch (error) {
+      console.error('Prediction failed:', error)
+      setLoadError(true)
+      alert('Prediction failed. Check browser console for details.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -185,6 +202,8 @@ export default function GlassPanel({
                 loading={loading} 
                 result={result} 
                 type={type}
+                loadError={loadError}
+                onPreviewError={() => setLoadError(true)}
               />
             ) : children}
           </div>
