@@ -3,7 +3,8 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
-const API = import.meta.env.VITE_API_BASE_URL
+// const API = import.meta.env.VITE_API_BASE_URL  || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_BASE_URL || window.location.origin
 const BRANDS = ['SHUTTLE', 'DETECT', 'YOLO', 'FASTAPI', 'VISION', 'TRACK']
 const MARQUEE = [...BRANDS, ...BRANDS, ...BRANDS, ...BRANDS]
 
