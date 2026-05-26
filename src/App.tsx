@@ -9,7 +9,7 @@ export default function App() {
       <PillNav />
       
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <ScrollVideo src="https://stream.mux.com/43NlHXsaMrmyzWamMk87m01fNyxSTekAD669BBAPBNm00.m3u8" />
+        <ScrollVideo src="../goldengate.mp4" />
         <ScrollFloat text={`Unleash The\nFull Power`} />
       </div>
 

@@ -4,17 +4,9 @@
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
-  --font-dirtyline: "Dirtyline36Daysoftype2022", sans-serif;
+  --font-dirtyline: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --animate-marquee: marquee 20s linear infinite;
   @keyframes marquee { 100% { transform: translateX(-50%); } }
-}
-
-@font-face {
-  font-family: 'Dirtyline36Daysoftype2022';
-  src: url('/Dirtyline-36daysoftype-2022.woff2') format('woff2');
-  font-style: normal;
-  font-weight: normal;
-  font-display: swap;
 }
 
 body { 
